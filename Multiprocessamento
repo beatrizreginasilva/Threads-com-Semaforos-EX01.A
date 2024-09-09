@@ -1,0 +1,58 @@
+import java.util.concurrent.Semaphore;
+
+public class Multiprocessamento {
+    private static final int NUM_THREADS = 21;
+    private static final Semaphore semaphore = new Semaphore(1);
+
+    public static void main(String[] args) {
+        for (int i = 1; i <= NUM_THREADS; i++) {
+            new Thread(new Tarefa(i)).start();
+        }
+    }
+
+    static class Tarefa implements Runnable {
+        private final int id;
+
+        Tarefa(int id) {
+            this.id = id;
+        }
+
+        @Override
+        public void run() {
+            try {
+                // Cálculos iniciais
+                realizarCalculos(0.2, 1.0);
+
+                // Primeira transação no banco de dados
+                if (id % 3 == 1) {
+                    realizarTransacaoBD();
+                }
+
+                // Cálculos intermediários
+                realizarCalculos(0.2, 1.0);
+
+                // Segunda transação no banco de dados
+                if (id % 3 == 1) {
+                    realizarTransacaoBD();
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+
+        private void realizarCalculos(double min, double max) throws InterruptedException {
+            double tempo = min + (max - min) * Math.random();
+            Thread.sleep((long) (tempo * 1000));
+        }
+
+        private void realizarTransacaoBD() throws InterruptedException {
+            semaphore.acquire();
+            try {
+                System.out.println("Thread " + id + " realizando transação no banco de dados.");
+                Thread.sleep(1000); // Simula a transação de 1 segundo
+            } finally {
+                semaphore.release();
+            }
+        }
+    }
+}
